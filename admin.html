@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>B-Events — Administration</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔒</text></svg>">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+
+  <!-- LOGIN SCREEN -->
+  <div id="login-screen" class="login-screen">
+    <div class="login-card">
+      <div class="login-logo">b<span>-</span>events<span>.pro</span></div>
+      <h2>Espace Administration</h2>
+      <p>Entrez le code d'accès pour continuer.</p>
+      <form id="login-form">
+        <input type="password" id="access-code" placeholder="Code d'accès" autocomplete="off" required>
+        <div id="login-error" class="login-error" hidden>Code incorrect</div>
+        <button type="submit" class="btn btn-primary">Accéder</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ADMIN PANEL -->
+  <div id="admin-panel" class="admin-panel" hidden>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-logo">b<span>-</span>events<span>.pro</span></div>
+      <nav class="sidebar-nav">
+        <button class="nav-item active" data-tab="events">
+          <span class="nav-icon">📅</span> Événements
+        </button>
+        <button class="nav-item" data-tab="requests">
+          <span class="nav-icon">📩</span> Demandes
+          <span id="requests-badge" class="badge" hidden>0</span>
+        </button>
+        <button class="nav-item" data-tab="emails">
+          <span class="nav-icon">✉️</span> Emails
+        </button>
+        <button class="nav-item" data-tab="media">
+          <span class="nav-icon">🖼️</span> Médias
+        </button>
+        <button class="nav-item" data-tab="settings">
+          <span class="nav-icon">⚙️</span> Paramètres
+        </button>
+      </nav>
+      <div class="sidebar-footer">
+        <a href="index.html" class="nav-item"><span class="nav-icon">🌐</span> Voir le site</a>
+        <button id="logout-btn" class="nav-item"><span class="nav-icon">🚪</span> Déconnexion</button>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+
+      <!-- EVENTS TAB -->
+      <section id="tab-events" class="tab-content active">
+        <div class="tab-header">
+          <h1>Événements</h1>
+          <div class="tab-actions">
+            <div class="sort-group">
+              <button class="btn btn-ghost btn-sm sort-btn" data-sort="date">Date</button>
+              <button class="btn btn-ghost btn-sm sort-btn" data-sort="status">Statut</button>
+              <button class="btn btn-ghost btn-sm sort-btn" data-sort="alpha">A→Z</button>
+            </div>
+            <button id="add-event-btn" class="btn btn-primary">+ Nouvel événement</button>
+          </div>
+        </div>
+        <div id="events-list" class="events-list"></div>
+      </section>
+
+      <!-- REQUESTS TAB -->
+      <section id="tab-requests" class="tab-content">
+        <div class="tab-header">
+          <h1>Demandes entrantes</h1>
+          <div class="tab-actions">
+            <button id="mark-all-read" class="btn btn-ghost">Tout marquer comme lu</button>
+            <button id="clear-requests" class="btn btn-danger">Tout supprimer</button>
+          </div>
+        </div>
+        <div id="requests-list" class="requests-list"></div>
+        <div id="no-requests" class="empty-state" hidden>
+          <span class="empty-icon">📭</span>
+          <p>Aucune demande pour le moment.</p>
+        </div>
+      </section>
+
+      <!-- EMAILS TAB -->
+      <section id="tab-emails" class="tab-content">
+        <div class="tab-header">
+          <h1>Contenu des emails</h1>
+        </div>
+
+        <div class="email-tabs">
+          <button class="email-tab active" data-email-tab="admin">Notification admin</button>
+          <button class="email-tab" data-email-tab="client">Accusé de réception client</button>
+        </div>
+
+        <!-- ADMIN EMAIL -->
+        <div id="email-panel-admin" class="email-panel active">
+          <div class="settings-card">
+            <h3>Email envoyé aux administrateurs</h3>
+            <p class="settings-desc">Cet email est envoyé aux destinataires configurés dans les paramètres à chaque nouvelle demande.</p>
+
+            <div class="form-group">
+              <label>Objet</label>
+              <input type="text" id="admin-email-subject" class="settings-input" placeholder="[B-Events] Nouvelle demande de {{nom}}">
+              <p class="settings-hint">Variables disponibles : {{nom}}, {{entreprise}}, {{email}}, {{profil}}, {{interet}}</p>
+            </div>
+
+            <div class="form-group">
+              <label>Titre du mail</label>
+              <input type="text" id="admin-email-title" class="settings-input" placeholder="Nouvelle demande B-Events">
+            </div>
+
+            <div class="form-group">
+              <label>Texte d'introduction (optionnel)</label>
+              <textarea id="admin-email-intro" class="settings-input" rows="2" placeholder="Ex: Une nouvelle demande a été reçue via le site."></textarea>
+            </div>
+
+            <div class="form-group">
+              <label>Pied de page</label>
+              <input type="text" id="admin-email-footer" class="settings-input" placeholder="Envoyé depuis le formulaire de contact b-events.pro">
+            </div>
+
+            <div class="email-btn-row">
+              <button id="save-admin-email" class="btn btn-primary">Enregistrer</button>
+              <button id="preview-admin-email" class="btn btn-ghost">Aperçu</button>
+              <button id="reset-admin-email" class="btn btn-ghost">Réinitialiser</button>
+            </div>
+            <div id="admin-email-status" class="settings-status" hidden></div>
+          </div>
+        </div>
+
+        <!-- CLIENT EMAIL -->
+        <div id="email-panel-client" class="email-panel">
+          <div class="settings-card">
+            <h3>Accusé de réception au client</h3>
+            <p class="settings-desc">Cet email est envoyé automatiquement à la personne qui soumet le formulaire de contact.</p>
+
+            <div class="form-group">
+              <label class="toggle-row">
+                <input type="checkbox" id="client-email-enabled">
+                <span>Envoyer un accusé de réception automatique</span>
+              </label>
+            </div>
+
+            <div class="form-group">
+              <label>Objet</label>
+              <input type="text" id="client-email-subject" class="settings-input" placeholder="Merci pour votre demande — B-Events">
+            </div>
+
+            <div class="form-group">
+              <label>Titre du mail</label>
+              <input type="text" id="client-email-title" class="settings-input" placeholder="Merci {{nom}} !">
+              <p class="settings-hint">Variables : {{nom}}, {{entreprise}}, {{email}}, {{profil}}, {{interet}}</p>
+            </div>
+
+            <div class="form-group">
+              <label>Corps du message</label>
+              <textarea id="client-email-body" class="settings-input" rows="4" placeholder="Nous avons bien reçu votre demande et reviendrons vers vous rapidement."></textarea>
+            </div>
+
+            <div class="form-group">
+              <label>Pied de page</label>
+              <input type="text" id="client-email-footer" class="settings-input" placeholder="L'équipe B-Events — www.b-events.pro">
+            </div>
+
+            <div class="email-btn-row">
+              <button id="save-client-email" class="btn btn-primary">Enregistrer</button>
+              <button id="preview-client-email" class="btn btn-ghost">Aperçu</button>
+              <button id="reset-client-email" class="btn btn-ghost">Réinitialiser</button>
+            </div>
+            <div id="client-email-status" class="settings-status" hidden></div>
+          </div>
+        </div>
+
+        <!-- EMAIL PREVIEW MODAL -->
+        <div id="email-preview-modal" class="modal-overlay" hidden>
+          <div class="modal modal-email-preview">
+            <div class="modal-header">
+              <h2>Aperçu de l'email</h2>
+              <button class="modal-close" id="email-preview-close">&times;</button>
+            </div>
+            <div id="email-preview-subject" class="email-preview-subject"></div>
+            <div id="email-preview-frame" class="email-preview-frame"></div>
+            <div class="modal-actions">
+              <button class="btn btn-primary" id="email-preview-done">Fermer</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- MEDIA TAB -->
+      <section id="tab-media" class="tab-content">
+        <div class="tab-header">
+          <h1>Bibliothèque médias</h1>
+          <div class="tab-actions">
+            <span id="media-storage-info" class="storage-info"></span>
+          </div>
+        </div>
+
+        <div id="upload-zone" class="upload-zone">
+          <div class="upload-zone-inner">
+            <svg class="upload-icon" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M24 32V12"/><path d="M16 20l8-8 8 8"/><path d="M40 32v6a4 4 0 01-4 4H12a4 4 0 01-4-4v-6"/></svg>
+            <p class="upload-text">Glissez vos images ici ou <label for="file-input" class="upload-link">parcourez</label></p>
+            <p class="upload-hint">JPG, PNG, WebP, SVG — max 2 Mo par fichier</p>
+            <input type="file" id="file-input" accept="image/*" multiple hidden>
+          </div>
+        </div>
+
+        <div id="media-grid" class="media-grid"></div>
+        <div id="no-media" class="empty-state" hidden>
+          <span class="empty-icon">🖼️</span>
+          <p>Aucun média. Importez des images pour les utiliser sur le site.</p>
+        </div>
+      </section>
+
+      <!-- SETTINGS TAB -->
+      <section id="tab-settings" class="tab-content">
+        <div class="tab-header">
+          <h1>Paramètres email</h1>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-card">
+            <h3>Email expéditeur</h3>
+            <p class="settings-desc">Adresse qui apparaitra comme expéditeur (doit être vérifiée dans Brevo).</p>
+            <div class="settings-input-row">
+              <input type="email" id="sender-email" placeholder="contact@b-events.pro" class="settings-input" value="contact@b-events.pro">
+              <input type="text" id="sender-name" placeholder="B-Events" class="settings-input" value="B-Events">
+              <button id="save-sender" class="btn btn-primary btn-sm">Enregistrer</button>
+            </div>
+          </div>
+
+          <div class="settings-card">
+            <h3>Emails destinataires</h3>
+            <p class="settings-desc">Chaque nouvelle demande enverra une notification à ces adresses.</p>
+            <div class="settings-input-row">
+              <input type="email" id="new-recipient" placeholder="nom@exemple.com" class="settings-input">
+              <button id="add-recipient" class="btn btn-primary btn-sm">Ajouter</button>
+            </div>
+            <div id="recipients-list" class="recipients-list"></div>
+            <div id="no-recipients" class="settings-hint" hidden>Aucun destinataire configuré. Les emails ne seront pas envoyés.</div>
+          </div>
+
+          <div class="settings-card">
+            <h3>Tester la configuration</h3>
+            <p class="settings-desc">Envoyez un email de test pour vérifier que tout fonctionne.</p>
+            <button id="send-test-email" class="btn btn-primary">Envoyer un email de test</button>
+            <div id="test-email-status" class="settings-status" hidden></div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- EVENT MODAL -->
+    <div id="event-modal" class="modal-overlay" hidden>
+      <div class="modal">
+        <div class="modal-header">
+          <h2 id="modal-title">Nouvel événement</h2>
+          <button class="modal-close" id="modal-close">&times;</button>
+        </div>
+        <form id="event-form" class="modal-form">
+          <input type="hidden" id="event-id">
+
+          <div class="form-group">
+            <label>Titre</label>
+            <input type="text" id="event-title" placeholder="Ex: Tournoi de Padel Inter-Entreprises" required>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Type</label>
+              <select id="event-type" required>
+                <option value="">Choisir...</option>
+                <option value="🏓 Expérience sportive">🏓 Expérience sportive</option>
+                <option value="🎳 Expérience sportive">🎳 Expérience sportive</option>
+                <option value="🏛️ Visite institutionnelle">🏛️ Visite institutionnelle</option>
+                <option value="🍷 Soirée gastronomie">🍷 Soirée gastronomie</option>
+                <option value="🏭 Visite d'entreprise">🏭 Visite d'entreprise</option>
+                <option value="🧩 Team challenge">🧩 Team challenge</option>
+                <option value="🎤 Conférence & débat">🎤 Conférence & débat</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Statut</label>
+              <select id="event-status" required>
+                <option value="soon">Bientôt</option>
+                <option value="open">Inscriptions ouvertes</option>
+                <option value="full">Complet</option>
+                <option value="past">Passé</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Date (jour)</label>
+              <input type="text" id="event-day" placeholder="Ex: 09 ou —">
+            </div>
+            <div class="form-group">
+              <label>Mois</label>
+              <input type="text" id="event-month" placeholder="Ex: Juil.">
+            </div>
+            <div class="form-group">
+              <label>Année</label>
+              <input type="text" id="event-year" placeholder="Ex: 2026" value="2026">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Description</label>
+            <textarea id="event-description" rows="3" placeholder="Description de l'événement..." required></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>Lieu</label>
+            <input type="text" id="event-location" placeholder="Ex: All In Padel — Décines (69)">
+          </div>
+
+          <div class="form-group">
+            <label>Tags (séparés par des virgules)</label>
+            <input type="text" id="event-tags" placeholder="Ex: Soirée, Networking, Nord-Isère">
+          </div>
+
+          <div class="form-group">
+            <label>Image (optionnel)</label>
+            <select id="event-image">
+              <option value="">Aucune image</option>
+            </select>
+            <div id="event-image-preview" class="event-image-preview" hidden>
+              <img id="event-image-preview-img" src="" alt="">
+            </div>
+          </div>
+
+          <div class="modal-actions">
+            <button type="button" class="btn btn-ghost" id="modal-cancel">Annuler</button>
+            <button type="submit" class="btn btn-primary">Enregistrer</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- REQUEST DETAIL MODAL -->
+    <div id="request-modal" class="modal-overlay" hidden>
+      <div class="modal modal-sm">
+        <div class="modal-header">
+          <h2>Détail de la demande</h2>
+          <button class="modal-close" id="request-modal-close">&times;</button>
+        </div>
+        <div id="request-detail" class="request-detail"></div>
+        <div class="modal-actions">
+          <button class="btn btn-danger" id="request-delete">Supprimer</button>
+          <button class="btn btn-primary" id="request-done">Fermer</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MEDIA PREVIEW MODAL -->
+    <div id="media-modal" class="modal-overlay" hidden>
+      <div class="modal modal-media">
+        <div class="modal-header">
+          <h2 id="media-modal-title">Image</h2>
+          <button class="modal-close" id="media-modal-close">&times;</button>
+        </div>
+        <div class="media-preview-wrap">
+          <img id="media-preview-img" src="" alt="">
+        </div>
+        <div class="media-meta">
+          <div class="form-group">
+            <label>Nom du fichier</label>
+            <div class="settings-input-row">
+              <input type="text" id="media-rename" class="settings-input" placeholder="nom-image">
+              <button id="media-rename-btn" class="btn btn-ghost btn-sm">Renommer</button>
+            </div>
+          </div>
+          <div class="form-group" style="margin-top:.8rem">
+            <label>Utiliser sur le site</label>
+            <div class="media-copy-row">
+              <code id="media-code" class="media-code"></code>
+              <button id="media-copy-btn" class="btn btn-primary btn-sm">Copier</button>
+            </div>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-danger" id="media-delete-btn">Supprimer</button>
+          <a id="media-download-btn" class="btn btn-ghost" download>Télécharger</a>
+          <button class="btn btn-primary" id="media-done-btn">Fermer</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="admin.js"></script>
+</body>
+</html>
