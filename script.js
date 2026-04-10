@@ -202,7 +202,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // Resolve event image from media library
       const evImg = ev.imageId ? adminMedia.find(m => m.id === ev.imageId) : null;
-      const imgHtml = evImg ? `<div class="event-visual"><img src="${evImg.dataUrl}" alt="${ev.title}" loading="lazy"></div>` : '';
+      const evImgSrc = evImg ? (evImg.url || `images/${evImg.name}.${evImg.ext}`) : '';
+      const imgHtml = evImgSrc ? `<div class="event-visual"><img src="${evImgSrc}" alt="${ev.title}" loading="lazy"></div>` : '';
 
       const card = document.createElement('div');
       card.className = 'event-card reveal';
@@ -239,31 +240,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  /* --- Media resolver: inject uploaded images from admin localStorage --- */
-  const mediaRaw = localStorage.getItem('bevents_media');
-  if (mediaRaw) {
-    const media = JSON.parse(mediaRaw);
-    // Build a lookup: "images/name.ext" → dataUrl
-    const mediaMap = {};
-    media.forEach(m => {
-      mediaMap[`images/${m.name}.${m.ext}`] = m.dataUrl;
-    });
-
-    // Replace all matching <img> src immediately
-    document.querySelectorAll('img[src^="images/"]').forEach(img => {
-      const dataUrl = mediaMap[img.getAttribute('src')];
-      if (dataUrl) img.src = dataUrl;
-    });
-
-    // Also handle images that fail to load (fallback)
-    document.querySelectorAll('img').forEach(img => {
-      img.addEventListener('error', () => {
-        const src = img.getAttribute('src');
-        const dataUrl = mediaMap[src];
-        if (dataUrl && img.src !== dataUrl) img.src = dataUrl;
-      }, { once: true });
-    });
-  }
+  /* --- Images are now hosted on GitHub Pages at /images/name.ext --- */
+  /* No media resolver needed: images are real files served by the server */
 
   /* --- Smooth scroll for anchor links --- */
   document.querySelectorAll('a[href^="#"]').forEach(anchor => {

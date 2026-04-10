@@ -223,10 +223,24 @@
       <!-- SETTINGS TAB -->
       <section id="tab-settings" class="tab-content">
         <div class="tab-header">
-          <h1>Paramètres email</h1>
+          <h1>Paramètres</h1>
         </div>
 
         <div class="settings-section">
+          <div class="settings-card">
+            <h3>GitHub — Hébergement des images</h3>
+            <p class="settings-desc">Les images uploadées seront envoyées sur le repo GitHub et accessibles via <code style="background:var(--bg);padding:.1rem .4rem;border-radius:4px;font-size:.75rem;">www.b-events.pro/images/nom.ext</code></p>
+            <div class="form-group" style="margin-bottom:.6rem">
+              <label>Personal Access Token GitHub</label>
+              <div class="settings-input-row">
+                <input type="password" id="github-token" placeholder="ghp_xxxxxxxxxxxx" class="settings-input">
+                <button id="save-github-token" class="btn btn-primary btn-sm">Enregistrer</button>
+              </div>
+              <p class="settings-hint">Créez un token sur github.com → Settings → Developer settings → Personal access tokens (classic) avec le scope <strong>repo</strong>.</p>
+            </div>
+            <div id="github-token-status" class="settings-status" hidden></div>
+          </div>
+
           <div class="settings-card">
             <h3>Email expéditeur</h3>
             <p class="settings-desc">Adresse qui apparaitra comme expéditeur (doit être vérifiée dans Brevo).</p>

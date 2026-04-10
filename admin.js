@@ -14,9 +14,96 @@
     sender: 'bevents_sender',
     media: 'bevents_media',
     emailAdmin: 'bevents_email_admin',
-    emailClient: 'bevents_email_client'
+    emailClient: 'bevents_email_client',
+    githubToken: 'bevents_github_token'
   };
   const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2 Mo
+
+  // --- GitHub Config ---
+  const GITHUB_OWNER = 'AceOSolo';
+  const GITHUB_REPO = 'B-events';
+  const GITHUB_BRANCH = 'master';
+  const GITHUB_IMAGES_PATH = 'b-events.pro/images';
+  const SITE_BASE_URL = 'https://www.b-events.pro';
+
+  function getGithubToken() {
+    return localStorage.getItem(STORAGE_KEYS.githubToken) || '';
+  }
+
+  async function githubUploadFile(fileName, base64Content) {
+    const token = getGithubToken();
+    if (!token) throw new Error('Token GitHub non configuré. Allez dans Paramètres.');
+
+    const path = `${GITHUB_IMAGES_PATH}/${fileName}`;
+
+    // Check if file already exists (to get its sha for update)
+    let sha;
+    try {
+      const existing = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${path}?ref=${GITHUB_BRANCH}`, {
+        headers: { 'Authorization': `token ${token}` }
+      });
+      if (existing.ok) {
+        const data = await existing.json();
+        sha = data.sha;
+      }
+    } catch (e) { /* file doesn't exist, that's fine */ }
+
+    const body = {
+      message: `[B-Events Admin] Upload image ${fileName}`,
+      content: base64Content,
+      branch: GITHUB_BRANCH
+    };
+    if (sha) body.sha = sha;
+
+    const res = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${path}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `token ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(body)
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || `Erreur GitHub ${res.status}`);
+    }
+
+    return await res.json();
+  }
+
+  async function githubDeleteFile(fileName) {
+    const token = getGithubToken();
+    if (!token) throw new Error('Token GitHub non configuré.');
+
+    const path = `${GITHUB_IMAGES_PATH}/${fileName}`;
+
+    // Get file sha
+    const existing = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${path}?ref=${GITHUB_BRANCH}`, {
+      headers: { 'Authorization': `token ${token}` }
+    });
+    if (!existing.ok) return; // file doesn't exist on GitHub
+
+    const data = await existing.json();
+
+    const res = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${path}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `token ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        message: `[B-Events Admin] Delete image ${fileName}`,
+        sha: data.sha,
+        branch: GITHUB_BRANCH
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || `Erreur GitHub ${res.status}`);
+    }
+  }
 
   // --- Default events (pre-loaded) ---
   const DEFAULT_EVENTS = [
@@ -258,7 +345,7 @@
     const allMedia = getMedia();
     list.innerHTML = events.map((ev, i) => {
       const img = ev.imageId ? allMedia.find(m => m.id === ev.imageId) : null;
-      const imgHtml = img ? `<img class="admin-event-thumb" src="${img.dataUrl}" alt="">` : '';
+      const imgHtml = img ? `<img class="admin-event-thumb" src="${getMediaUrl(img)}" alt="">` : '';
       const isFirst = i === 0;
       const isLast = i === events.length - 1;
       return `
@@ -332,7 +419,7 @@
     const previewImg = $('#event-image-preview-img');
     const current = media.find(m => m.id === select.value);
     if (current) {
-      previewImg.src = current.dataUrl;
+      previewImg.src = getMediaUrl(current);
       preview.hidden = false;
     } else {
       preview.hidden = true;
@@ -341,7 +428,7 @@
     select.onchange = () => {
       const m = media.find(x => x.id === select.value);
       if (m) {
-        previewImg.src = m.dataUrl;
+        previewImg.src = getMediaUrl(m);
         preview.hidden = false;
       } else {
         preview.hidden = true;
@@ -543,6 +630,29 @@
   }
 
   function setupSettings() {
+    // Load GitHub token
+    const savedToken = getGithubToken();
+    if (savedToken) $('#github-token').value = savedToken;
+
+    // Save GitHub token
+    $('#save-github-token').addEventListener('click', async () => {
+      const token = $('#github-token').value.trim();
+      if (!token) return showStatus('github-token-status', 'Token requis.', 'error');
+
+      // Test the token
+      try {
+        const res = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}`, {
+          headers: { 'Authorization': `token ${token}` }
+        });
+        if (!res.ok) throw new Error('Token invalide ou pas accès au repo');
+
+        localStorage.setItem(STORAGE_KEYS.githubToken, token);
+        showStatus('github-token-status', 'Token valide et enregistré !', 'success');
+      } catch (err) {
+        showStatus('github-token-status', `Erreur: ${err.message}`, 'error');
+      }
+    });
+
     // Load existing values
     const sender = getSender();
     $('#sender-email').value = sender.email;
@@ -902,7 +1012,15 @@
     const files = Array.from(fileList).filter(f => f.type.startsWith('image/'));
     if (files.length === 0) return;
 
+    if (!getGithubToken()) {
+      showToast('Configurez votre token GitHub dans Paramètres avant d\'uploader.', 'error');
+      return;
+    }
+
     let processed = 0;
+    let success = 0;
+    showToast('Upload en cours...', '');
+
     files.forEach(file => {
       if (file.size > MAX_FILE_SIZE) {
         showToast(`${file.name} trop lourd (max 2 Mo)`, 'error');
@@ -911,27 +1029,56 @@
       }
 
       const reader = new FileReader();
-      reader.onload = () => {
-        const media = getMedia();
+      reader.onload = async () => {
         const name = file.name.replace(/\.[^.]+$/, '').replace(/[^a-zA-Z0-9-_]/g, '-').toLowerCase();
         const ext = file.name.split('.').pop().toLowerCase();
-        media.unshift({
-          id: Date.now().toString() + Math.random().toString(36).slice(2, 6),
-          name: name,
-          ext: ext,
-          dataUrl: reader.result,
-          size: file.size,
-          date: Date.now()
-        });
-        saveMedia(media);
+        const fileName = `${name}.${ext}`;
+
+        // Extract pure base64 from data URL (remove "data:image/xxx;base64," prefix)
+        const base64 = reader.result.split(',')[1];
+
+        try {
+          await githubUploadFile(fileName, base64);
+
+          // Store metadata locally (without the heavy dataUrl)
+          const media = getMedia();
+          media.unshift({
+            id: Date.now().toString() + Math.random().toString(36).slice(2, 6),
+            name: name,
+            ext: ext,
+            size: file.size,
+            date: Date.now(),
+            url: `images/${fileName}`
+          });
+          saveMedia(media);
+          success++;
+        } catch (err) {
+          showToast(`Erreur: ${err.message}`, 'error');
+        }
+
         processed++;
         if (processed === files.length) {
           renderMedia();
-          showToast(`${files.length} image${files.length > 1 ? 's' : ''} importée${files.length > 1 ? 's' : ''}`, 'success');
+          if (success > 0) {
+            showToast(`${success} image${success > 1 ? 's' : ''} uploadée${success > 1 ? 's' : ''} sur GitHub`, 'success');
+          }
         }
       };
       reader.readAsDataURL(file);
     });
+  }
+
+  function getMediaUrl(m) {
+    // If the media has a real URL (new system), use it from the site
+    if (m.url) return `${SITE_BASE_URL}/${m.url}`;
+    // Legacy fallback: dataUrl from old localStorage system
+    if (m.dataUrl) return m.dataUrl;
+    // Construct URL from name
+    return `${SITE_BASE_URL}/images/${m.name}.${m.ext}`;
+  }
+
+  function getMediaRelativePath(m) {
+    return m.url || `images/${m.name}.${m.ext}`;
   }
 
   function renderMedia() {
@@ -940,10 +1087,7 @@
     const empty = $('#no-media');
     const storageInfo = $('#media-storage-info');
 
-    // Storage usage estimate
-    const used = JSON.stringify(media).length;
-    const usedMb = (used / (1024 * 1024)).toFixed(1);
-    storageInfo.textContent = `${media.length} image${media.length !== 1 ? 's' : ''} — ${usedMb} Mo utilisés`;
+    storageInfo.textContent = `${media.length} image${media.length !== 1 ? 's' : ''} — hébergées sur GitHub`;
 
     if (media.length === 0) {
       grid.innerHTML = '';
@@ -956,9 +1100,10 @@
       const sizeStr = m.size < 1024 ? m.size + ' o' :
         m.size < 1048576 ? (m.size / 1024).toFixed(0) + ' Ko' :
           (m.size / 1048576).toFixed(1) + ' Mo';
+      const imgSrc = getMediaUrl(m);
       return `
         <div class="media-card" data-id="${m.id}">
-          <img class="media-card-img" src="${m.dataUrl}" alt="${escapeHtml(m.name)}" loading="lazy">
+          <img class="media-card-img" src="${imgSrc}" alt="${escapeHtml(m.name)}" loading="lazy">
           <div class="media-card-info">
             <div class="media-card-name">${escapeHtml(m.name)}.${m.ext}</div>
             <div class="media-card-size">${sizeStr}</div>
@@ -981,50 +1126,87 @@
     currentMediaId = m.id;
     $('#media-modal').hidden = false;
     $('#media-modal-title').textContent = m.name + '.' + m.ext;
-    $('#media-preview-img').src = m.dataUrl;
+    $('#media-preview-img').src = getMediaUrl(m);
     $('#media-rename').value = m.name;
-    $('#media-code').textContent = `images/${m.name}.${m.ext}`;
+
+    const fullUrl = `${SITE_BASE_URL}/images/${m.name}.${m.ext}`;
+    $('#media-code').textContent = fullUrl;
 
     // Download link
     const dlBtn = $('#media-download-btn');
-    dlBtn.href = m.dataUrl;
+    dlBtn.href = getMediaUrl(m);
     dlBtn.download = m.name + '.' + m.ext;
 
     // Copy
     $('#media-copy-btn').onclick = () => {
-      const tag = `<img src="images/${m.name}.${m.ext}" alt="${m.name}" loading="lazy">`;
-      navigator.clipboard.writeText(tag).then(() => {
-        showToast('Balise HTML copiée', 'success');
+      navigator.clipboard.writeText(fullUrl).then(() => {
+        showToast('URL copiée !', 'success');
       });
     };
 
     // Rename
-    $('#media-rename-btn').onclick = () => {
+    $('#media-rename-btn').onclick = async () => {
       const newName = $('#media-rename').value.trim().replace(/[^a-zA-Z0-9-_]/g, '-').toLowerCase();
-      if (!newName) return;
-      const media = getMedia();
-      const found = media.find(x => x.id === m.id);
-      if (found) {
-        found.name = newName;
-        saveMedia(media);
-        m.name = newName;
+      if (!newName || newName === m.name) return;
+
+      try {
+        showToast('Renommage en cours...', '');
+
+        // Download old file content from GitHub, upload with new name, delete old
+        const token = getGithubToken();
+        const oldPath = `${GITHUB_IMAGES_PATH}/${m.name}.${m.ext}`;
+        const res = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${oldPath}?ref=${GITHUB_BRANCH}`, {
+          headers: { 'Authorization': `token ${token}` }
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          // Upload with new name
+          await githubUploadFile(`${newName}.${m.ext}`, data.content.replace(/\n/g, ''));
+          // Delete old file
+          await githubDeleteFile(`${m.name}.${m.ext}`);
+        }
+
+        const media = getMedia();
+        const found = media.find(x => x.id === m.id);
+        if (found) {
+          found.name = newName;
+          found.url = `images/${newName}.${m.ext}`;
+          saveMedia(media);
+          m.name = newName;
+          m.url = found.url;
+        }
+
         $('#media-modal-title').textContent = newName + '.' + m.ext;
-        $('#media-code').textContent = `images/${newName}.${m.ext}`;
+        const newUrl = `${SITE_BASE_URL}/images/${newName}.${m.ext}`;
+        $('#media-code').textContent = newUrl;
+        $('#media-preview-img').src = getMediaUrl(m);
         dlBtn.download = newName + '.' + m.ext;
+        dlBtn.href = getMediaUrl(m);
         renderMedia();
-        showToast('Image renommée', 'success');
+        showToast('Image renommée sur GitHub', 'success');
+      } catch (err) {
+        showToast(`Erreur: ${err.message}`, 'error');
       }
     };
 
     // Delete
-    $('#media-delete-btn').onclick = () => {
-      if (confirm('Supprimer cette image ?')) {
-        const media = getMedia().filter(x => x.id !== m.id);
-        saveMedia(media);
-        renderMedia();
-        closeMediaModal();
-        showToast('Image supprimée', 'success');
+    $('#media-delete-btn').onclick = async () => {
+      if (!confirm('Supprimer cette image ?')) return;
+
+      try {
+        showToast('Suppression en cours...', '');
+        await githubDeleteFile(`${m.name}.${m.ext}`);
+      } catch (err) {
+        // Continue with local deletion even if GitHub fails
+        console.warn('GitHub delete failed:', err);
       }
+
+      const media = getMedia().filter(x => x.id !== m.id);
+      saveMedia(media);
+      renderMedia();
+      closeMediaModal();
+      showToast('Image supprimée', 'success');
     };
   }
 
