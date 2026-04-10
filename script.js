@@ -82,7 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
       localStorage.setItem('bevents_requests', JSON.stringify(requests));
 
       // --- Email helpers ---
-      const BREVO_KEY = '';
+      const BREVO_KEY = localStorage.getItem('bevents_brevo_key') || '';
       const senderRaw = localStorage.getItem('bevents_sender');
       const sender = senderRaw ? JSON.parse(senderRaw) : { email: 'contact@b-events.pro', name: 'B-Events' };
 

@@ -5,7 +5,9 @@
 (() => {
   // --- Configuration ---
   const ADMIN_CODE = 'bevents2026';
-  const BREVO_API_KEY = '';
+  function getBrevoKey() {
+    return localStorage.getItem(STORAGE_KEYS.brevoKey) || '';
+  }
   const STORAGE_KEYS = {
     events: 'bevents_events',
     requests: 'bevents_requests',
@@ -15,7 +17,8 @@
     media: 'bevents_media',
     emailAdmin: 'bevents_email_admin',
     emailClient: 'bevents_email_client',
-    githubToken: 'bevents_github_token'
+    githubToken: 'bevents_github_token',
+    brevoKey: 'bevents_brevo_key'
   };
   const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2 Mo
 
@@ -653,6 +656,28 @@
       }
     });
 
+    // Load Brevo key
+    const savedBrevoKey = getBrevoKey();
+    if (savedBrevoKey) $('#brevo-key').value = savedBrevoKey;
+
+    // Save Brevo key
+    $('#save-brevo-key').addEventListener('click', async () => {
+      const key = $('#brevo-key').value.trim();
+      if (!key) return showStatus('brevo-key-status', 'Clé requise.', 'error');
+
+      try {
+        const res = await fetch('https://api.brevo.com/v3/account', {
+          headers: { 'accept': 'application/json', 'api-key': key }
+        });
+        if (!res.ok) throw new Error('Clé API invalide');
+
+        localStorage.setItem(STORAGE_KEYS.brevoKey, key);
+        showStatus('brevo-key-status', 'Clé Brevo valide et enregistrée !', 'success');
+      } catch (err) {
+        showStatus('brevo-key-status', `Erreur: ${err.message}`, 'error');
+      }
+    });
+
     // Load existing values
     const sender = getSender();
     $('#sender-email').value = sender.email;
@@ -743,7 +768,7 @@
         method: 'POST',
         headers: {
           'accept': 'application/json',
-          'api-key': BREVO_API_KEY,
+          'api-key': getBrevoKey(),
           'content-type': 'application/json'
         },
         body: JSON.stringify({

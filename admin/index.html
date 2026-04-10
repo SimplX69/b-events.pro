@@ -242,6 +242,20 @@
           </div>
 
           <div class="settings-card">
+            <h3>Brevo — Envoi d'emails</h3>
+            <p class="settings-desc">Clé API pour l'envoi des emails de notification et d'accusé de réception via Brevo (ex-Sendinblue).</p>
+            <div class="form-group" style="margin-bottom:.6rem">
+              <label>Clé API Brevo</label>
+              <div class="settings-input-row">
+                <input type="password" id="brevo-key" placeholder="xkeysib-xxxxxxxxxxxx" class="settings-input">
+                <button id="save-brevo-key" class="btn btn-primary btn-sm">Enregistrer</button>
+              </div>
+              <p class="settings-hint">Trouvez votre clé sur app.brevo.com → SMTP & API → API Keys.</p>
+            </div>
+            <div id="brevo-key-status" class="settings-status" hidden></div>
+          </div>
+
+          <div class="settings-card">
             <h3>Email expéditeur</h3>
             <p class="settings-desc">Adresse qui apparaitra comme expéditeur (doit être vérifiée dans Brevo).</p>
             <div class="settings-input-row">
