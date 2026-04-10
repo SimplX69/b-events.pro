@@ -5,7 +5,7 @@
 (() => {
   // --- Configuration ---
   const ADMIN_CODE = 'bevents2026';
-  const BREVO_API_KEY = process.env.SENDINBLUE_API_KEY;
+  const BREVO_API_KEY = '';
   const STORAGE_KEYS = {
     events: 'bevents_events',
     requests: 'bevents_requests',
