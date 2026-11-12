@@ -777,9 +777,9 @@
           subject: '[B-Events] Email de test',
           htmlContent: `
             <div style="font-family:sans-serif;max-width:500px;margin:0 auto;padding:2rem;">
-              <h2 style="color:#4a3228;">B-Events — Test email</h2>
-              <p style="color:#7a6b5e;">La configuration email fonctionne correctement.</p>
-              <p style="color:#7a6b5e;font-size:0.85rem;">Les notifications de nouvelles demandes seront envoyées à cette adresse.</p>
+              <h2 style="color:#0B1322;">B-Events — Test email</h2>
+              <p style="color:#5B6578;">La configuration email fonctionne correctement.</p>
+              <p style="color:#5B6578;font-size:0.85rem;">Les notifications de nouvelles demandes seront envoyées à cette adresse.</p>
             </div>
           `
         })
@@ -940,20 +940,20 @@
   }
 
   function buildAdminEmailHtml(tpl, data) {
-    const introHtml = tpl.intro ? `<p style="color:#3a2d24;font-size:.92rem;margin:0 0 1.2rem;">${escapeHtml(replaceVars(tpl.intro, data))}</p>` : '';
-    const footerHtml = tpl.footer ? `<p style="margin-top:1.5rem;color:#b8a99a;font-size:.8rem;">${escapeHtml(replaceVars(tpl.footer, data))}</p>` : '';
+    const introHtml = tpl.intro ? `<p style="color:#3A4356;font-size:.92rem;margin:0 0 1.2rem;">${escapeHtml(replaceVars(tpl.intro, data))}</p>` : '';
+    const footerHtml = tpl.footer ? `<p style="margin-top:1.5rem;color:#5B6578;font-size:.8rem;">${escapeHtml(replaceVars(tpl.footer, data))}</p>` : '';
 
     return `
-      <div style="font-family:'Helvetica Neue',Arial,sans-serif;max-width:600px;margin:0 auto;background:#f0ebe4;padding:2rem;border-radius:16px;">
-        <h2 style="color:#4a3228;margin:0 0 1rem;font-size:1.3rem;">${escapeHtml(replaceVars(tpl.title, data))}</h2>
+      <div style="font-family:'Helvetica Neue',Arial,sans-serif;max-width:600px;margin:0 auto;background:#F4EFE4;padding:2rem;border-radius:16px;">
+        <h2 style="color:#0B1322;margin:0 0 1rem;font-size:1.3rem;">${escapeHtml(replaceVars(tpl.title, data))}</h2>
         ${introHtml}
         <table style="width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden;">
-          <tr><td style="padding:.7rem 1rem;color:#7a6b5e;font-weight:600;border-bottom:1px solid #f0ebe4;width:130px;">Nom</td><td style="padding:.7rem 1rem;color:#3a2d24;border-bottom:1px solid #f0ebe4;">${escapeHtml(data.nom || '—')}</td></tr>
-          <tr><td style="padding:.7rem 1rem;color:#7a6b5e;font-weight:600;border-bottom:1px solid #f0ebe4;">Entreprise</td><td style="padding:.7rem 1rem;color:#3a2d24;border-bottom:1px solid #f0ebe4;">${escapeHtml(data.entreprise || '—')}</td></tr>
-          <tr><td style="padding:.7rem 1rem;color:#7a6b5e;font-weight:600;border-bottom:1px solid #f0ebe4;">Email</td><td style="padding:.7rem 1rem;border-bottom:1px solid #f0ebe4;"><a href="mailto:${data.email}" style="color:#8b5e3c;">${escapeHtml(data.email || '—')}</a></td></tr>
-          <tr><td style="padding:.7rem 1rem;color:#7a6b5e;font-weight:600;border-bottom:1px solid #f0ebe4;">Profil</td><td style="padding:.7rem 1rem;color:#3a2d24;border-bottom:1px solid #f0ebe4;">${escapeHtml(data.profil || '—')}</td></tr>
-          <tr><td style="padding:.7rem 1rem;color:#7a6b5e;font-weight:600;border-bottom:1px solid #f0ebe4;">Intérêt</td><td style="padding:.7rem 1rem;color:#3a2d24;border-bottom:1px solid #f0ebe4;">${escapeHtml(data.interet || '—')}</td></tr>
-          <tr><td style="padding:.7rem 1rem;color:#7a6b5e;font-weight:600;">Message</td><td style="padding:.7rem 1rem;color:#3a2d24;">${escapeHtml(data.message || '—')}</td></tr>
+          <tr><td style="padding:.7rem 1rem;color:#5B6578;font-weight:600;border-bottom:1px solid #F4EFE4;width:130px;">Nom</td><td style="padding:.7rem 1rem;color:#3A4356;border-bottom:1px solid #F4EFE4;">${escapeHtml(data.nom || '—')}</td></tr>
+          <tr><td style="padding:.7rem 1rem;color:#5B6578;font-weight:600;border-bottom:1px solid #F4EFE4;">Entreprise</td><td style="padding:.7rem 1rem;color:#3A4356;border-bottom:1px solid #F4EFE4;">${escapeHtml(data.entreprise || '—')}</td></tr>
+          <tr><td style="padding:.7rem 1rem;color:#5B6578;font-weight:600;border-bottom:1px solid #F4EFE4;">Email</td><td style="padding:.7rem 1rem;border-bottom:1px solid #F4EFE4;"><a href="mailto:${data.email}" style="color:#8C6A2C;">${escapeHtml(data.email || '—')}</a></td></tr>
+          <tr><td style="padding:.7rem 1rem;color:#5B6578;font-weight:600;border-bottom:1px solid #F4EFE4;">Profil</td><td style="padding:.7rem 1rem;color:#3A4356;border-bottom:1px solid #F4EFE4;">${escapeHtml(data.profil || '—')}</td></tr>
+          <tr><td style="padding:.7rem 1rem;color:#5B6578;font-weight:600;border-bottom:1px solid #F4EFE4;">Intérêt</td><td style="padding:.7rem 1rem;color:#3A4356;border-bottom:1px solid #F4EFE4;">${escapeHtml(data.interet || '—')}</td></tr>
+          <tr><td style="padding:.7rem 1rem;color:#5B6578;font-weight:600;">Message</td><td style="padding:.7rem 1rem;color:#3A4356;">${escapeHtml(data.message || '—')}</td></tr>
         </table>
         ${footerHtml}
       </div>
@@ -961,12 +961,12 @@
   }
 
   function buildClientEmailHtml(tpl, data) {
-    const bodyLines = replaceVars(tpl.body, data).split('\n').map(l => `<p style="color:#3a2d24;font-size:.92rem;margin:0 0 .6rem;line-height:1.6;">${escapeHtml(l) || '&nbsp;'}</p>`).join('');
-    const footerHtml = tpl.footer ? `<p style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid #d4c8bc;color:#b8a99a;font-size:.8rem;">${escapeHtml(replaceVars(tpl.footer, data))}</p>` : '';
+    const bodyLines = replaceVars(tpl.body, data).split('\n').map(l => `<p style="color:#3A4356;font-size:.92rem;margin:0 0 .6rem;line-height:1.6;">${escapeHtml(l) || '&nbsp;'}</p>`).join('');
+    const footerHtml = tpl.footer ? `<p style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid #E2DACA;color:#5B6578;font-size:.8rem;">${escapeHtml(replaceVars(tpl.footer, data))}</p>` : '';
 
     return `
-      <div style="font-family:'Helvetica Neue',Arial,sans-serif;max-width:600px;margin:0 auto;background:#f0ebe4;padding:2rem;border-radius:16px;">
-        <h2 style="color:#4a3228;margin:0 0 1.2rem;font-size:1.3rem;">${escapeHtml(replaceVars(tpl.title, data))}</h2>
+      <div style="font-family:'Helvetica Neue',Arial,sans-serif;max-width:600px;margin:0 auto;background:#F4EFE4;padding:2rem;border-radius:16px;">
+        <h2 style="color:#0B1322;margin:0 0 1.2rem;font-size:1.3rem;">${escapeHtml(replaceVars(tpl.title, data))}</h2>
         ${bodyLines}
         ${footerHtml}
       </div>

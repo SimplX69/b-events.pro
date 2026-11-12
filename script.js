@@ -18,8 +18,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (toggle && menu) {
     toggle.addEventListener('click', () => {
-      toggle.classList.toggle('active');
-      menu.classList.toggle('open');
+      const open = !menu.classList.contains('open');
+      toggle.classList.toggle('active', open);
+      menu.classList.toggle('open', open);
+      toggle.setAttribute('aria-expanded', String(open));
+      toggle.setAttribute('aria-label', open ? 'Fermer le menu' : 'Ouvrir le menu');
     });
 
     // Close menu on link click
@@ -27,9 +30,22 @@ document.addEventListener('DOMContentLoaded', () => {
       link.addEventListener('click', () => {
         toggle.classList.remove('active');
         menu.classList.remove('open');
+        toggle.setAttribute('aria-expanded', 'false');
+        toggle.setAttribute('aria-label', 'Ouvrir le menu');
       });
     });
   }
+
+  /* --- Pré-sélection de l'intérêt dans le formulaire (boutons « Réserver ma place ») --- */
+  const interetSelect = document.getElementById('interet');
+  document.querySelectorAll('[data-interet]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (!interetSelect) return;
+      const wanted = btn.getAttribute('data-interet');
+      const match = Array.from(interetSelect.options).find(o => o.text === wanted);
+      if (match) interetSelect.value = match.value || match.text;
+    });
+  });
 
   /* --- Scroll reveal --- */
   const reveals = document.querySelectorAll('.reveal');
@@ -115,20 +131,20 @@ document.addEventListener('DOMContentLoaded', () => {
             intro: '',
             footer: 'Envoyé depuis le formulaire de contact b-events.pro'
           };
-          const introHtml = ae.intro ? `<p style="color:#3a2d24;font-size:.92rem;margin:0 0 1.2rem;">${esc(vars(ae.intro))}</p>` : '';
-          const footerHtml = ae.footer ? `<p style="margin-top:1.5rem;color:#b8a99a;font-size:.8rem;">${esc(vars(ae.footer))}</p>` : '';
+          const introHtml = ae.intro ? `<p style="color:#3A4356;font-size:.92rem;margin:0 0 1.2rem;">${esc(vars(ae.intro))}</p>` : '';
+          const footerHtml = ae.footer ? `<p style="margin-top:1.5rem;color:#5B6578;font-size:.8rem;">${esc(vars(ae.footer))}</p>` : '';
 
           const adminHtml = `
-            <div style="font-family:'Helvetica Neue',Arial,sans-serif;max-width:600px;margin:0 auto;background:#f0ebe4;padding:2rem;border-radius:16px;">
-              <h2 style="color:#4a3228;margin:0 0 1rem;font-size:1.3rem;">${esc(vars(ae.title))}</h2>
+            <div style="font-family:'Helvetica Neue',Arial,sans-serif;max-width:600px;margin:0 auto;background:#F4EFE4;padding:2rem;border-radius:16px;">
+              <h2 style="color:#0B1322;margin:0 0 1rem;font-size:1.3rem;">${esc(vars(ae.title))}</h2>
               ${introHtml}
               <table style="width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden;">
-                <tr><td style="padding:.7rem 1rem;color:#7a6b5e;font-weight:600;border-bottom:1px solid #f0ebe4;width:130px;">Nom</td><td style="padding:.7rem 1rem;color:#3a2d24;border-bottom:1px solid #f0ebe4;">${esc(entries.nom)}</td></tr>
-                <tr><td style="padding:.7rem 1rem;color:#7a6b5e;font-weight:600;border-bottom:1px solid #f0ebe4;">Entreprise</td><td style="padding:.7rem 1rem;color:#3a2d24;border-bottom:1px solid #f0ebe4;">${esc(entries.entreprise)}</td></tr>
-                <tr><td style="padding:.7rem 1rem;color:#7a6b5e;font-weight:600;border-bottom:1px solid #f0ebe4;">Email</td><td style="padding:.7rem 1rem;border-bottom:1px solid #f0ebe4;"><a href="mailto:${entries.email}" style="color:#8b5e3c;">${esc(entries.email)}</a></td></tr>
-                <tr><td style="padding:.7rem 1rem;color:#7a6b5e;font-weight:600;border-bottom:1px solid #f0ebe4;">Profil</td><td style="padding:.7rem 1rem;color:#3a2d24;border-bottom:1px solid #f0ebe4;">${esc(entries.profil)}</td></tr>
-                <tr><td style="padding:.7rem 1rem;color:#7a6b5e;font-weight:600;border-bottom:1px solid #f0ebe4;">Intérêt</td><td style="padding:.7rem 1rem;color:#3a2d24;border-bottom:1px solid #f0ebe4;">${esc(entries.interet)}</td></tr>
-                <tr><td style="padding:.7rem 1rem;color:#7a6b5e;font-weight:600;">Message</td><td style="padding:.7rem 1rem;color:#3a2d24;">${esc(entries.message)}</td></tr>
+                <tr><td style="padding:.7rem 1rem;color:#5B6578;font-weight:600;border-bottom:1px solid #F4EFE4;width:130px;">Nom</td><td style="padding:.7rem 1rem;color:#3A4356;border-bottom:1px solid #F4EFE4;">${esc(entries.nom)}</td></tr>
+                <tr><td style="padding:.7rem 1rem;color:#5B6578;font-weight:600;border-bottom:1px solid #F4EFE4;">Entreprise</td><td style="padding:.7rem 1rem;color:#3A4356;border-bottom:1px solid #F4EFE4;">${esc(entries.entreprise)}</td></tr>
+                <tr><td style="padding:.7rem 1rem;color:#5B6578;font-weight:600;border-bottom:1px solid #F4EFE4;">Email</td><td style="padding:.7rem 1rem;border-bottom:1px solid #F4EFE4;"><a href="mailto:${entries.email}" style="color:#8C6A2C;">${esc(entries.email)}</a></td></tr>
+                <tr><td style="padding:.7rem 1rem;color:#5B6578;font-weight:600;border-bottom:1px solid #F4EFE4;">Profil</td><td style="padding:.7rem 1rem;color:#3A4356;border-bottom:1px solid #F4EFE4;">${esc(entries.profil)}</td></tr>
+                <tr><td style="padding:.7rem 1rem;color:#5B6578;font-weight:600;border-bottom:1px solid #F4EFE4;">Intérêt</td><td style="padding:.7rem 1rem;color:#3A4356;border-bottom:1px solid #F4EFE4;">${esc(entries.interet)}</td></tr>
+                <tr><td style="padding:.7rem 1rem;color:#5B6578;font-weight:600;">Message</td><td style="padding:.7rem 1rem;color:#3A4356;">${esc(entries.message)}</td></tr>
               </table>
               ${footerHtml}
             </div>
@@ -147,12 +163,12 @@ document.addEventListener('DOMContentLoaded', () => {
       };
 
       if (ce.enabled && entries.email) {
-        const bodyLines = vars(ce.body).split('\n').map(l => `<p style="color:#3a2d24;font-size:.92rem;margin:0 0 .6rem;line-height:1.6;">${esc(l) || '&nbsp;'}</p>`).join('');
-        const footerHtml = ce.footer ? `<p style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid #d4c8bc;color:#b8a99a;font-size:.8rem;">${esc(vars(ce.footer))}</p>` : '';
+        const bodyLines = vars(ce.body).split('\n').map(l => `<p style="color:#3A4356;font-size:.92rem;margin:0 0 .6rem;line-height:1.6;">${esc(l) || '&nbsp;'}</p>`).join('');
+        const footerHtml = ce.footer ? `<p style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid #E2DACA;color:#5B6578;font-size:.8rem;">${esc(vars(ce.footer))}</p>` : '';
 
         const clientHtml = `
-          <div style="font-family:'Helvetica Neue',Arial,sans-serif;max-width:600px;margin:0 auto;background:#f0ebe4;padding:2rem;border-radius:16px;">
-            <h2 style="color:#4a3228;margin:0 0 1.2rem;font-size:1.3rem;">${esc(vars(ce.title))}</h2>
+          <div style="font-family:'Helvetica Neue',Arial,sans-serif;max-width:600px;margin:0 auto;background:#F4EFE4;padding:2rem;border-radius:16px;">
+            <h2 style="color:#0B1322;margin:0 0 1.2rem;font-size:1.3rem;">${esc(vars(ce.title))}</h2>
             ${bodyLines}
             ${footerHtml}
           </div>
@@ -268,9 +284,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const id = section.getAttribute('id');
       const link = document.querySelector(`.nav-links a[href="#${id}"]`);
       if (link) {
-        link.style.color = (scrollY >= top && scrollY < top + height)
-          ? 'var(--brown-dark)'
-          : '';
+        link.classList.toggle('active', scrollY >= top && scrollY < top + height);
       }
     });
   };
