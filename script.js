@@ -282,7 +282,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const top = section.offsetTop;
       const height = section.offsetHeight;
       const id = section.getAttribute('id');
-      const link = document.querySelector(`.nav-links a[href="#${id}"]`);
+      const link = document.querySelector(`.nav-links a[href="#${id}"]:not(.nav-cta)`);
       if (link) {
         link.classList.toggle('active', scrollY >= top && scrollY < top + height);
       }
