@@ -72,117 +72,60 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  /* --- Contact form --- */
+  /* --- Contact form ---
+     Envoi via FormSubmit (formsubmit.co) : gratuit, sans compte ni clé.
+     Le premier envoi déclenche un mail d'activation à FORM_TO : cliquer le lien une fois.
+     Pour changer de service plus tard, il suffit de changer FORM_ENDPOINT. */
+  const FORM_TO = 'contact@b-events.pro';
+  const FORM_ENDPOINT = `https://formsubmit.co/ajax/${FORM_TO}`;
+
   const form = document.querySelector('.contact-form');
   if (form) {
-    form.addEventListener('submit', (e) => {
+    form.addEventListener('submit', async (e) => {
       e.preventDefault();
 
-      // Collect form data
-      const data = new FormData(form);
-      const entries = Object.fromEntries(data.entries());
+      const entries = Object.fromEntries(new FormData(form).entries());
+      const button = form.querySelector('button[type="submit"]');
+      const label = button.textContent;
+      form.querySelector('.form-error')?.remove();
+      button.disabled = true;
+      button.textContent = 'Envoi…';
 
-      // Save to localStorage for admin panel
-      const requests = JSON.parse(localStorage.getItem('bevents_requests') || '[]');
-      requests.push({
-        id: Date.now().toString(),
-        timestamp: Date.now(),
-        read: false,
-        nom: entries.nom || '',
-        entreprise: entries.entreprise || '',
-        email: entries.email || '',
-        profil: entries.profil || '',
-        interet: entries.interet || '',
-        message: entries.message || ''
-      });
-      localStorage.setItem('bevents_requests', JSON.stringify(requests));
-
-      // --- Email helpers ---
-      const BREVO_KEY = localStorage.getItem('bevents_brevo_key') || '';
-      const senderRaw = localStorage.getItem('bevents_sender');
-      const sender = senderRaw ? JSON.parse(senderRaw) : { email: 'contact@b-events.pro', name: 'B-Events' };
-
-      function esc(s) { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
-      function vars(str) {
-        return str
-          .replace(/\{\{nom\}\}/g, entries.nom || '')
-          .replace(/\{\{entreprise\}\}/g, entries.entreprise || '')
-          .replace(/\{\{email\}\}/g, entries.email || '')
-          .replace(/\{\{profil\}\}/g, entries.profil || '')
-          .replace(/\{\{interet\}\}/g, entries.interet || '');
-      }
-
-      function sendBrevo(to, subject, htmlContent) {
-        return fetch('https://api.brevo.com/v3/smtp/email', {
+      try {
+        const res = await fetch(FORM_ENDPOINT, {
           method: 'POST',
-          headers: { 'accept': 'application/json', 'api-key': BREVO_KEY, 'content-type': 'application/json' },
-          body: JSON.stringify({ sender: { name: sender.name, email: sender.email }, to, subject, htmlContent })
-        }).catch(() => {});
-      }
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({
+            _subject: `[B-Events] Nouvelle demande de ${entries.nom || ''}`,
+            _replyto: entries.email,
+            _template: 'table',
+            _captcha: 'false',
+            Nom: entries.nom,
+            Entreprise: entries.entreprise,
+            Email: entries.email,
+            Profil: entries.profil,
+            'Intérêt': entries.interet || '',
+            Message: entries.message || ''
+          })
+        });
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok || String(json.success) !== 'true') throw new Error(json.message || res.status);
 
-      // --- Admin notification email ---
-      const recipientsRaw = localStorage.getItem('bevents_recipients');
-      if (recipientsRaw) {
-        const recipients = JSON.parse(recipientsRaw);
-        if (recipients.length > 0) {
-          const ae = JSON.parse(localStorage.getItem('bevents_email_admin') || 'null') || {
-            subject: '[B-Events] Nouvelle demande de {{nom}}',
-            title: 'Nouvelle demande B-Events',
-            intro: '',
-            footer: 'Envoyé depuis le formulaire de contact b-events.pro'
-          };
-          const introHtml = ae.intro ? `<p style="color:#3A4356;font-size:.92rem;margin:0 0 1.2rem;">${esc(vars(ae.intro))}</p>` : '';
-          const footerHtml = ae.footer ? `<p style="margin-top:1.5rem;color:#5B6578;font-size:.8rem;">${esc(vars(ae.footer))}</p>` : '';
-
-          const adminHtml = `
-            <div style="font-family:'Helvetica Neue',Arial,sans-serif;max-width:600px;margin:0 auto;background:#F4EFE4;padding:2rem;border-radius:16px;">
-              <h2 style="color:#0B1322;margin:0 0 1rem;font-size:1.3rem;">${esc(vars(ae.title))}</h2>
-              ${introHtml}
-              <table style="width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden;">
-                <tr><td style="padding:.7rem 1rem;color:#5B6578;font-weight:600;border-bottom:1px solid #F4EFE4;width:130px;">Nom</td><td style="padding:.7rem 1rem;color:#3A4356;border-bottom:1px solid #F4EFE4;">${esc(entries.nom)}</td></tr>
-                <tr><td style="padding:.7rem 1rem;color:#5B6578;font-weight:600;border-bottom:1px solid #F4EFE4;">Entreprise</td><td style="padding:.7rem 1rem;color:#3A4356;border-bottom:1px solid #F4EFE4;">${esc(entries.entreprise)}</td></tr>
-                <tr><td style="padding:.7rem 1rem;color:#5B6578;font-weight:600;border-bottom:1px solid #F4EFE4;">Email</td><td style="padding:.7rem 1rem;border-bottom:1px solid #F4EFE4;"><a href="mailto:${entries.email}" style="color:#8C6A2C;">${esc(entries.email)}</a></td></tr>
-                <tr><td style="padding:.7rem 1rem;color:#5B6578;font-weight:600;border-bottom:1px solid #F4EFE4;">Profil</td><td style="padding:.7rem 1rem;color:#3A4356;border-bottom:1px solid #F4EFE4;">${esc(entries.profil)}</td></tr>
-                <tr><td style="padding:.7rem 1rem;color:#5B6578;font-weight:600;border-bottom:1px solid #F4EFE4;">Intérêt</td><td style="padding:.7rem 1rem;color:#3A4356;border-bottom:1px solid #F4EFE4;">${esc(entries.interet)}</td></tr>
-                <tr><td style="padding:.7rem 1rem;color:#5B6578;font-weight:600;">Message</td><td style="padding:.7rem 1rem;color:#3A4356;">${esc(entries.message)}</td></tr>
-              </table>
-              ${footerHtml}
-            </div>
-          `;
-          sendBrevo(recipients.map(email => ({ email })), vars(ae.subject), adminHtml);
-        }
-      }
-
-      // --- Client confirmation email ---
-      const ce = JSON.parse(localStorage.getItem('bevents_email_client') || 'null') || {
-        enabled: true,
-        subject: 'Merci pour votre demande — B-Events',
-        title: 'Merci {{nom}} !',
-        body: "Nous avons bien reçu votre demande et reviendrons vers vous dans les plus brefs délais.\n\nN'hésitez pas à nous contacter à contact@b-events.pro si vous avez des questions.",
-        footer: "L'équipe B-Events — www.b-events.pro"
-      };
-
-      if (ce.enabled && entries.email) {
-        const bodyLines = vars(ce.body).split('\n').map(l => `<p style="color:#3A4356;font-size:.92rem;margin:0 0 .6rem;line-height:1.6;">${esc(l) || '&nbsp;'}</p>`).join('');
-        const footerHtml = ce.footer ? `<p style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid #E2DACA;color:#5B6578;font-size:.8rem;">${esc(vars(ce.footer))}</p>` : '';
-
-        const clientHtml = `
-          <div style="font-family:'Helvetica Neue',Arial,sans-serif;max-width:600px;margin:0 auto;background:#F4EFE4;padding:2rem;border-radius:16px;">
-            <h2 style="color:#0B1322;margin:0 0 1.2rem;font-size:1.3rem;">${esc(vars(ce.title))}</h2>
-            ${bodyLines}
-            ${footerHtml}
+        form.innerHTML = `
+          <div class="form-success">
+            Merci !
+            <small>Nous vous recontactons rapidement.</small>
           </div>
         `;
-        sendBrevo([{ email: entries.email }], vars(ce.subject), clientHtml);
+      } catch (err) {
+        button.disabled = false;
+        button.textContent = label;
+        const p = document.createElement('p');
+        p.className = 'form-error';
+        p.setAttribute('role', 'alert');
+        p.innerHTML = `L'envoi n'a pas abouti. Écrivez-nous directement à <a href="mailto:${FORM_TO}">${FORM_TO}</a>.`;
+        button.after(p);
       }
-
-      // Show success message
-      form.innerHTML = `
-        <div class="form-success">
-          Merci !
-          <small>Nous vous recontactons rapidement.</small>
-        </div>
-      `;
     });
   }
 
